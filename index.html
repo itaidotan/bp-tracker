@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f7f5ef">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="BP Log">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>BP Log</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Local health log</p>
+          <h1>BP Log</h1>
+        </div>
+        <button class="icon-button" id="installBtn" type="button" title="Install app" hidden>
+          <span aria-hidden="true">+</span>
+          <span class="sr-only">Install app</span>
+        </button>
+      </header>
+
+      <main>
+        <section class="entry-panel" aria-labelledby="entryTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">New session</p>
+              <h2 id="entryTitle">Add measurements</h2>
+            </div>
+            <time id="sessionTime"></time>
+          </div>
+
+          <form id="entryForm" autocomplete="off">
+            <div class="number-grid">
+              <label>
+                <span>Sys</span>
+                <input id="sysInput" type="number" inputmode="numeric" min="60" max="260" placeholder="120" enterkeyhint="next">
+              </label>
+              <label>
+                <span>Dia</span>
+                <input id="diaInput" type="number" inputmode="numeric" min="35" max="160" placeholder="80" enterkeyhint="next">
+              </label>
+              <label>
+                <span>Pulse</span>
+                <input id="pulseInput" type="number" inputmode="numeric" min="30" max="220" placeholder="64" enterkeyhint="done">
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button class="secondary-button" type="button" id="addMeasurementBtn">Add row</button>
+              <button class="primary-button" type="submit">Save session</button>
+            </div>
+          </form>
+
+          <div class="pending-wrap">
+            <div class="pending-head">
+              <span>Current batch</span>
+              <button class="text-button" id="clearPendingBtn" type="button">Clear</button>
+            </div>
+            <div id="pendingList" class="pending-list empty-state">No measurements yet.</div>
+          </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Summary">
+          <article>
+            <span class="metric-label">Latest average</span>
+            <strong id="latestAvg">--/--</strong>
+            <small id="latestPulse">-- bpm</small>
+          </article>
+          <article>
+            <span class="metric-label">30 day average</span>
+            <strong id="monthAvg">--/--</strong>
+            <small id="monthCount">0 readings</small>
+          </article>
+          <article>
+            <span class="metric-label">Highest recent</span>
+            <strong id="highestRecent">--/--</strong>
+            <small>Last 30 days</small>
+          </article>
+        </section>
+
+        <section class="chart-section" aria-labelledby="chartTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Trend</p>
+              <h2 id="chartTitle">Session averages</h2>
+            </div>
+            <div class="segmented" role="group" aria-label="Chart range">
+              <button type="button" data-range="14" class="active">14d</button>
+              <button type="button" data-range="30">30d</button>
+              <button type="button" data-range="all">All</button>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="trendChart" width="960" height="420" aria-label="Blood pressure trend chart"></canvas>
+          </div>
+        </section>
+
+        <section class="history-section" aria-labelledby="historyTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">History</p>
+              <h2 id="historyTitle">Sessions</h2>
+            </div>
+            <div class="history-actions">
+              <button class="secondary-button" id="exportCsvBtn" type="button">CSV</button>
+              <button class="secondary-button" id="exportJsonBtn" type="button">Backup</button>
+              <label class="secondary-button import-label">
+                Restore
+                <input id="importInput" type="file" accept="application/json">
+              </label>
+            </div>
+          </div>
+          <div id="historyList" class="history-list empty-state">No saved sessions.</div>
+        </section>
+      </main>
+    </div>
+
+    <template id="pendingTemplate">
+      <div class="pending-row">
+        <span class="reading-main"></span>
+        <span class="reading-pulse"></span>
+        <button type="button" class="remove-row" title="Remove measurement">Remove</button>
+      </div>
+    </template>
+
+    <template id="sessionTemplate">
+      <article class="session-card">
+        <div class="session-summary">
+          <div>
+            <time></time>
+            <strong></strong>
+          </div>
+          <button type="button" class="remove-session" title="Delete session">Delete</button>
+        </div>
+        <div class="session-readings"></div>
+      </article>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
