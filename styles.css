@@ -75,12 +75,15 @@ h2 {
 
 main {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
 .entry-panel,
+.time-filter-panel,
 .chart-section,
 .history-section {
+  min-width: 0;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -108,6 +111,41 @@ label {
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 750;
+}
+
+.number-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.input-step {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+}
+
+.input-step input {
+  flex: 1 1 0;
+  border-radius: 8px 0 0 8px;
+  min-width: 0;
+  width: 0;
+}
+
+.field-next {
+  flex: 0 0 58px;
+  min-width: 58px;
+  border: 1px solid var(--accent);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: #eef8f6;
+  color: var(--accent-strong);
+  font-weight: 850;
+}
+
+.field-done {
+  background: var(--accent);
+  color: white;
 }
 
 input {
@@ -138,6 +176,7 @@ input:focus {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 2px 0 14px;
+  min-width: 0;
 }
 
 .primary-button,
@@ -242,9 +281,44 @@ input:focus {
   font-size: 0.95rem;
 }
 
+.filter-heading {
+  margin-bottom: 12px;
+}
+
+.time-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.time-controls label > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.time-controls output {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  accent-color: var(--accent);
+  box-shadow: none;
+}
+
+.filter-summary {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -380,6 +454,7 @@ canvas {
   }
 
   .entry-panel,
+  .time-filter-panel,
   .chart-section,
   .history-section {
     padding: 14px;
@@ -398,9 +473,14 @@ canvas {
     grid-template-columns: 1fr;
   }
 
+  .time-controls {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
   .number-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 7px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
   }
 
   input {
@@ -409,13 +489,23 @@ canvas {
     padding-inline: 9px;
   }
 
+  input[type="range"] {
+    min-height: 36px;
+    padding: 0;
+  }
+
+  .field-next {
+    flex-basis: 62px;
+    min-width: 62px;
+  }
+
   .form-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .history-actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

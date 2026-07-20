@@ -8,12 +8,17 @@ const els = {
   sysInput: document.querySelector("#sysInput"),
   diaInput: document.querySelector("#diaInput"),
   pulseInput: document.querySelector("#pulseInput"),
+  sysNextBtn: document.querySelector("#sysNextBtn"),
+  diaNextBtn: document.querySelector("#diaNextBtn"),
+  pulseDoneBtn: document.querySelector("#pulseDoneBtn"),
   addMeasurementBtn: document.querySelector("#addMeasurementBtn"),
   clearPendingBtn: document.querySelector("#clearPendingBtn"),
   pendingList: document.querySelector("#pendingList"),
   historyList: document.querySelector("#historyList"),
   latestAvg: document.querySelector("#latestAvg"),
   latestPulse: document.querySelector("#latestPulse"),
+  filteredAvg: document.querySelector("#filteredAvg"),
+  filteredCount: document.querySelector("#filteredCount"),
   monthAvg: document.querySelector("#monthAvg"),
   monthCount: document.querySelector("#monthCount"),
   highestRecent: document.querySelector("#highestRecent"),
@@ -22,6 +27,12 @@ const els = {
   exportJsonBtn: document.querySelector("#exportJsonBtn"),
   importInput: document.querySelector("#importInput"),
   installBtn: document.querySelector("#installBtn"),
+  startTimeRange: document.querySelector("#startTimeRange"),
+  endTimeRange: document.querySelector("#endTimeRange"),
+  startTimeOutput: document.querySelector("#startTimeOutput"),
+  endTimeOutput: document.querySelector("#endTimeOutput"),
+  timeFilterSummary: document.querySelector("#timeFilterSummary"),
+  resetTimeFilterBtn: document.querySelector("#resetTimeFilterBtn"),
   pendingTemplate: document.querySelector("#pendingTemplate"),
   sessionTemplate: document.querySelector("#sessionTemplate"),
 };
@@ -30,6 +41,8 @@ let db;
 let pending = [];
 let sessions = [];
 let chartRange = "14";
+let startHour = 0;
+let endHour = 24;
 let deferredPrompt;
 
 const dateFmt = new Intl.DateTimeFormat(undefined, {
@@ -206,14 +219,48 @@ async function submitSession(event) {
 }
 
 function sessionAverage(session) {
-  return average(session.readings);
+  return average(readingsForSession(session));
 }
 
-function readingsInLast(days) {
-  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+function readingTimestamp(session, reading) {
+  return reading.recordedAt || session.startedAt;
+}
+
+function matchesTimeFilter(timestamp) {
+  if (startHour === 0 && endHour === 24) return true;
+  if (startHour === endHour) return true;
+  const date = new Date(timestamp);
+  const hour = date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
+  if (startHour < endHour) return hour >= startHour && hour < endHour;
+  return hour >= startHour || hour < endHour;
+}
+
+function readingsForSession(session) {
+  return session.readings.filter((reading) => matchesTimeFilter(readingTimestamp(session, reading)));
+}
+
+function filteredReadings(days) {
+  const cutoff = days ? Date.now() - days * 24 * 60 * 60 * 1000 : null;
   return sessions.flatMap((session) =>
-    session.readings.filter((reading) => Date.parse(reading.recordedAt || session.startedAt) >= cutoff)
+    readingsForSession(session).filter((reading) => !cutoff || Date.parse(readingTimestamp(session, reading)) >= cutoff)
   );
+}
+
+function hourLabel(hour) {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
+function renderTimeFilter() {
+  els.startTimeOutput.value = hourLabel(startHour);
+  els.endTimeOutput.value = hourLabel(endHour);
+  if (startHour === 0 && endHour === 24) {
+    els.timeFilterSummary.textContent = "Showing measurements from all hours, across all dates.";
+  } else if (startHour === endHour) {
+    els.timeFilterSummary.textContent = `Showing a full 24-hour window from ${hourLabel(startHour)}, across all dates.`;
+  } else {
+    const overnight = startHour > endHour;
+    els.timeFilterSummary.textContent = `Showing ${hourLabel(startHour)}–${hourLabel(endHour)}${overnight ? " (overnight)" : ""}, across all dates.`;
+  }
 }
 
 function setText(id, value) {
@@ -221,16 +268,22 @@ function setText(id, value) {
 }
 
 function renderStats() {
-  const latest = sessions[0] ? sessionAverage(sessions[0]) : null;
+  const latestSession = sessions.find((session) => readingsForSession(session).length);
+  const latest = latestSession ? sessionAverage(latestSession) : null;
   setText("latestAvg", latest ? `${latest.sys}/${latest.dia}` : "--/--");
   setText("latestPulse", latest ? `${latest.pulse} bpm` : "-- bpm");
 
-  const recent = readingsInLast(30);
+  const selected = filteredReadings();
+  const selectedAvg = average(selected);
+  setText("filteredAvg", selectedAvg ? `${selectedAvg.sys}/${selectedAvg.dia}` : "--/--");
+  setText("filteredCount", `${selected.length} reading${selected.length === 1 ? "" : "s"}`);
+
+  const recent = filteredReadings(30);
   const recentAvg = average(recent);
   setText("monthAvg", recentAvg ? `${recentAvg.sys}/${recentAvg.dia}` : "--/--");
   setText("monthCount", `${recent.length} reading${recent.length === 1 ? "" : "s"}`);
 
-  const highest = recent.reduce((max, reading) => {
+  const highest = selected.reduce((max, reading) => {
     if (!max || reading.sys > max.sys || (reading.sys === max.sys && reading.dia > max.dia)) return reading;
     return max;
   }, null);
@@ -247,6 +300,8 @@ function renderHistory() {
 
   els.historyList.className = "history-list";
   sessions.forEach((session) => {
+    const matchingReadings = readingsForSession(session);
+    if (!matchingReadings.length) return;
     const card = els.sessionTemplate.content.firstElementChild.cloneNode(true);
     const avg = sessionAverage(session);
     card.querySelector("time").textContent = dateFmt.format(new Date(session.startedAt));
@@ -258,7 +313,7 @@ function renderHistory() {
     });
 
     const readings = card.querySelector(".session-readings");
-    session.readings.forEach((reading) => {
+    matchingReadings.forEach((reading) => {
       const chip = document.createElement("span");
       chip.className = "reading-chip";
       chip.innerHTML = `<strong>${reading.sys}/${reading.dia}</strong><span>${reading.pulse} bpm</span>`;
@@ -266,6 +321,11 @@ function renderHistory() {
     });
     els.historyList.append(card);
   });
+
+  if (!els.historyList.children.length) {
+    els.historyList.className = "history-list empty-state";
+    els.historyList.textContent = "No measurements match these hours.";
+  }
 }
 
 function chartData() {
@@ -324,24 +384,44 @@ function renderChart() {
     return;
   }
 
-  const xFor = (index) => pad.left + (rows.length === 1 ? plotW / 2 : (index / (rows.length - 1)) * plotW);
+  let minT;
+  let maxT;
+  if (chartRange === "all") {
+    minT = rows[0].t;
+    maxT = rows[rows.length - 1].t;
+    if (minT === maxT) {
+      minT -= 12 * 60 * 60 * 1000;
+      maxT += 12 * 60 * 60 * 1000;
+    }
+  } else {
+    maxT = Date.now();
+    minT = maxT - Number(chartRange) * 24 * 60 * 60 * 1000;
+  }
+  const xFor = (timestamp) => pad.left + ((timestamp - minT) / (maxT - minT)) * plotW;
   const yFor = (value) => pad.top + plotH - ((value - minY) / (maxY - minY)) * plotH;
 
-  drawLine(ctx, rows.map((row, index) => [xFor(index), yFor(row.avg.sys)]), "#0f766e");
-  drawLine(ctx, rows.map((row, index) => [xFor(index), yFor(row.avg.dia)]), "#6d5dfc");
+  drawLine(ctx, rows.map((row) => [xFor(row.t), yFor(row.avg.sys)]), "#0f766e");
+  drawLine(ctx, rows.map((row) => [xFor(row.t), yFor(row.avg.dia)]), "#6d5dfc");
 
-  rows.forEach((row, index) => {
-    const x = xFor(index);
+  rows.forEach((row) => {
+    const x = xFor(row.t);
     dot(ctx, x, yFor(row.avg.sys), "#0f766e");
     dot(ctx, x, yFor(row.avg.dia), "#6d5dfc");
-    if (index === 0 || index === rows.length - 1) {
-      ctx.fillStyle = "#6a6760";
-      ctx.textAlign = index === 0 ? "left" : "right";
-      ctx.fillText(new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(row.t)), x, height - 10);
-    }
   });
 
+  drawTimeAxis(ctx, minT, maxT, pad.left, plotW, height);
   legend(ctx, width);
+}
+
+function drawTimeAxis(ctx, minT, maxT, left, plotW, height) {
+  const format = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+  [0, 0.5, 1].forEach((position) => {
+    const x = left + position * plotW;
+    const timestamp = minT + position * (maxT - minT);
+    ctx.fillStyle = "#6a6760";
+    ctx.textAlign = position === 0 ? "left" : position === 1 ? "right" : "center";
+    ctx.fillText(format.format(new Date(timestamp)), x, height - 10);
+  });
 }
 
 function drawLine(ctx, points, color) {
@@ -413,6 +493,7 @@ async function importJson(file) {
 
 async function refresh() {
   sessions = await getAllSessions();
+  renderTimeFilter();
   renderStats();
   renderHistory();
   renderChart();
@@ -420,6 +501,9 @@ async function refresh() {
 
 function wireEvents() {
   els.addMeasurementBtn.addEventListener("click", addFromFields);
+  els.sysNextBtn.addEventListener("click", () => els.diaInput.focus());
+  els.diaNextBtn.addEventListener("click", () => els.pulseInput.focus());
+  els.pulseDoneBtn.addEventListener("click", addFromFields);
   els.entryForm.addEventListener("submit", submitSession);
   els.clearPendingBtn.addEventListener("click", () => {
     pending = [];
@@ -444,6 +528,27 @@ function wireEvents() {
       chartRange = button.dataset.range;
       renderChart();
     });
+  });
+
+  [els.startTimeRange, els.endTimeRange].forEach((range) => {
+    range.addEventListener("input", () => {
+      startHour = Number(els.startTimeRange.value);
+      endHour = Number(els.endTimeRange.value);
+      renderTimeFilter();
+      renderStats();
+      renderHistory();
+      renderChart();
+    });
+  });
+  els.resetTimeFilterBtn.addEventListener("click", () => {
+    startHour = 0;
+    endHour = 24;
+    els.startTimeRange.value = String(startHour);
+    els.endTimeRange.value = String(endHour);
+    renderTimeFilter();
+    renderStats();
+    renderHistory();
+    renderChart();
   });
 
   els.exportCsvBtn.addEventListener("click", exportCsv);

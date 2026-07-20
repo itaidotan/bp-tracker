@@ -2,6 +2,14 @@
 
 A private, local-first blood pressure tracker. It stores sessions in the browser with IndexedDB and can run as a static site.
 
+## Features
+
+- Save several blood pressure readings as one measurement session.
+- Filter readings and calculated statistics by time of day, including overnight ranges.
+- Compare session averages on a chart whose spacing reflects the actual time between sessions.
+- Move through the measurement fields with visible Next and Done buttons on mobile.
+- Export CSV data or create and restore a JSON backup.
+
 ## Use Locally
 
 Open `index.html` directly, or serve the folder:
