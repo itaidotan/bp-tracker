@@ -5,9 +5,8 @@ A private, local-first blood pressure tracker. It stores sessions in the browser
 ## Features
 
 - Save several blood pressure readings as one measurement session.
-- Filter readings and calculated statistics by time of day, including overnight ranges.
+- Filter readings and calculated statistics with native time pickers or quick day-part presets, including overnight ranges.
 - Compare session averages on a chart whose spacing reflects the actual time between sessions.
-- Move through the measurement fields with visible Next and Done buttons on mobile.
 - Export CSV data or create and restore a JSON backup.
 
 ## Use Locally

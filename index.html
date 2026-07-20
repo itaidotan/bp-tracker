@@ -36,27 +36,18 @@
 
           <form id="entryForm" autocomplete="off">
             <div class="number-grid">
-              <div class="number-field">
-                <label for="sysInput">Sys</label>
-                <span class="input-step">
-                  <input id="sysInput" type="number" inputmode="numeric" min="60" max="260" placeholder="120" enterkeyhint="next">
-                  <button class="field-next" id="sysNextBtn" type="button">Next</button>
-                </span>
-              </div>
-              <div class="number-field">
-                <label for="diaInput">Dia</label>
-                <span class="input-step">
-                  <input id="diaInput" type="number" inputmode="numeric" min="35" max="160" placeholder="80" enterkeyhint="next">
-                  <button class="field-next" id="diaNextBtn" type="button">Next</button>
-                </span>
-              </div>
-              <div class="number-field">
-                <label for="pulseInput">Pulse</label>
-                <span class="input-step">
-                  <input id="pulseInput" type="number" inputmode="numeric" min="30" max="220" placeholder="64" enterkeyhint="done">
-                  <button class="field-next field-done" id="pulseDoneBtn" type="button">Done</button>
-                </span>
-              </div>
+              <label>
+                <span>Sys</span>
+                <input id="sysInput" type="number" inputmode="numeric" min="60" max="260" placeholder="120" enterkeyhint="next">
+              </label>
+              <label>
+                <span>Dia</span>
+                <input id="diaInput" type="number" inputmode="numeric" min="35" max="160" placeholder="80" enterkeyhint="next">
+              </label>
+              <label>
+                <span>Pulse</span>
+                <input id="pulseInput" type="number" inputmode="numeric" min="30" max="220" placeholder="64" enterkeyhint="done">
+              </label>
             </div>
 
             <div class="form-actions">
@@ -80,16 +71,21 @@
               <p class="eyebrow">Time of day</p>
               <h2 id="timeFilterTitle">Filter measurements</h2>
             </div>
-            <button class="text-button" id="resetTimeFilterBtn" type="button">All day</button>
+          </div>
+          <div class="filter-presets" role="group" aria-label="Quick time filters">
+            <button type="button" class="active" data-start="00:00" data-end="00:00">All day</button>
+            <button type="button" data-start="22:00" data-end="06:00">Nighttime <small>22–06</small></button>
+            <button type="button" data-start="06:00" data-end="16:00">Daytime <small>06–16</small></button>
+            <button type="button" data-start="16:00" data-end="22:00">Evening <small>16–22</small></button>
           </div>
           <div class="time-controls" aria-describedby="timeFilterSummary">
             <label>
-              <span>From <output id="startTimeOutput" for="startTimeRange">00:00</output></span>
-              <input id="startTimeRange" type="range" min="0" max="23" step="1" value="0">
+              <span>From</span>
+              <input id="startTimeInput" type="time" value="00:00" step="3600">
             </label>
             <label>
-              <span>To <output id="endTimeOutput" for="endTimeRange">24:00</output></span>
-              <input id="endTimeRange" type="range" min="1" max="24" step="1" value="24">
+              <span>To</span>
+              <input id="endTimeInput" type="time" value="00:00" step="3600">
             </label>
           </div>
           <p id="timeFilterSummary" class="filter-summary">Showing measurements from all hours, across all dates.</p>

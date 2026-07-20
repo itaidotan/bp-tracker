@@ -113,41 +113,6 @@ label {
   font-weight: 750;
 }
 
-.number-field {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-}
-
-.input-step {
-  display: flex;
-  min-width: 0;
-  width: 100%;
-}
-
-.input-step input {
-  flex: 1 1 0;
-  border-radius: 8px 0 0 8px;
-  min-width: 0;
-  width: 0;
-}
-
-.field-next {
-  flex: 0 0 58px;
-  min-width: 58px;
-  border: 1px solid var(--accent);
-  border-left: 0;
-  border-radius: 0 8px 8px 0;
-  background: #eef8f6;
-  color: var(--accent-strong);
-  font-weight: 850;
-}
-
-.field-done {
-  background: var(--accent);
-  color: white;
-}
-
 input {
   width: 100%;
   min-height: 56px;
@@ -288,26 +253,42 @@ input:focus {
 .time-controls {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 10px;
 }
 
-.time-controls label > span {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+.time-controls input {
+  min-width: 0;
 }
 
-.time-controls output {
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
+.filter-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
-input[type="range"] {
-  min-height: 32px;
-  padding: 0;
-  border: 0;
-  accent-color: var(--accent);
-  box-shadow: none;
+.filter-presets button {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfaf7;
+  color: var(--muted);
+  padding: 6px;
+  font-weight: 800;
+}
+
+.filter-presets button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.filter-presets small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.82;
 }
 
 .filter-summary {
@@ -473,14 +454,9 @@ canvas {
     grid-template-columns: 1fr;
   }
 
-  .time-controls {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
   .number-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
   }
 
   input {
@@ -489,14 +465,8 @@ canvas {
     padding-inline: 9px;
   }
 
-  input[type="range"] {
-    min-height: 36px;
-    padding: 0;
-  }
-
-  .field-next {
-    flex-basis: 62px;
-    min-width: 62px;
+  .filter-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .form-actions {

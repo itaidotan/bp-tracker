@@ -8,9 +8,6 @@ const els = {
   sysInput: document.querySelector("#sysInput"),
   diaInput: document.querySelector("#diaInput"),
   pulseInput: document.querySelector("#pulseInput"),
-  sysNextBtn: document.querySelector("#sysNextBtn"),
-  diaNextBtn: document.querySelector("#diaNextBtn"),
-  pulseDoneBtn: document.querySelector("#pulseDoneBtn"),
   addMeasurementBtn: document.querySelector("#addMeasurementBtn"),
   clearPendingBtn: document.querySelector("#clearPendingBtn"),
   pendingList: document.querySelector("#pendingList"),
@@ -27,12 +24,9 @@ const els = {
   exportJsonBtn: document.querySelector("#exportJsonBtn"),
   importInput: document.querySelector("#importInput"),
   installBtn: document.querySelector("#installBtn"),
-  startTimeRange: document.querySelector("#startTimeRange"),
-  endTimeRange: document.querySelector("#endTimeRange"),
-  startTimeOutput: document.querySelector("#startTimeOutput"),
-  endTimeOutput: document.querySelector("#endTimeOutput"),
+  startTimeInput: document.querySelector("#startTimeInput"),
+  endTimeInput: document.querySelector("#endTimeInput"),
   timeFilterSummary: document.querySelector("#timeFilterSummary"),
-  resetTimeFilterBtn: document.querySelector("#resetTimeFilterBtn"),
   pendingTemplate: document.querySelector("#pendingTemplate"),
   sessionTemplate: document.querySelector("#sessionTemplate"),
 };
@@ -41,8 +35,8 @@ let db;
 let pending = [];
 let sessions = [];
 let chartRange = "14";
-let startHour = 0;
-let endHour = 24;
+let startMinute = 0;
+let endMinute = 0;
 let deferredPrompt;
 
 const dateFmt = new Intl.DateTimeFormat(undefined, {
@@ -227,12 +221,11 @@ function readingTimestamp(session, reading) {
 }
 
 function matchesTimeFilter(timestamp) {
-  if (startHour === 0 && endHour === 24) return true;
-  if (startHour === endHour) return true;
+  if (startMinute === endMinute) return true;
   const date = new Date(timestamp);
-  const hour = date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
-  if (startHour < endHour) return hour >= startHour && hour < endHour;
-  return hour >= startHour || hour < endHour;
+  const minute = date.getHours() * 60 + date.getMinutes();
+  if (startMinute < endMinute) return minute >= startMinute && minute < endMinute;
+  return minute >= startMinute || minute < endMinute;
 }
 
 function readingsForSession(session) {
@@ -246,21 +239,39 @@ function filteredReadings(days) {
   );
 }
 
-function hourLabel(hour) {
-  return `${String(hour).padStart(2, "0")}:00`;
+function minutesFromValue(value) {
+  if (!/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hour, minute] = value.split(":").map(Number);
+  return hour * 60 + minute;
+}
+
+function timeValue(minutes) {
+  const hour = Math.floor(minutes / 60) % 24;
+  const minute = minutes % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function renderTimeFilter() {
-  els.startTimeOutput.value = hourLabel(startHour);
-  els.endTimeOutput.value = hourLabel(endHour);
-  if (startHour === 0 && endHour === 24) {
+  els.startTimeInput.value = timeValue(startMinute);
+  els.endTimeInput.value = timeValue(endMinute);
+  document.querySelectorAll(".filter-presets button").forEach((button) => {
+    const isActive = minutesFromValue(button.dataset.start) === startMinute && minutesFromValue(button.dataset.end) === endMinute;
+    button.classList.toggle("active", isActive);
+  });
+
+  if (startMinute === endMinute) {
     els.timeFilterSummary.textContent = "Showing measurements from all hours, across all dates.";
-  } else if (startHour === endHour) {
-    els.timeFilterSummary.textContent = `Showing a full 24-hour window from ${hourLabel(startHour)}, across all dates.`;
   } else {
-    const overnight = startHour > endHour;
-    els.timeFilterSummary.textContent = `Showing ${hourLabel(startHour)}–${hourLabel(endHour)}${overnight ? " (overnight)" : ""}, across all dates.`;
+    const overnight = startMinute > endMinute;
+    els.timeFilterSummary.textContent = `Showing ${timeValue(startMinute)}–${timeValue(endMinute)}${overnight ? " (overnight)" : ""}, across all dates.`;
   }
+}
+
+function renderFilteredViews() {
+  renderTimeFilter();
+  renderStats();
+  renderHistory();
+  renderChart();
 }
 
 function setText(id, value) {
@@ -501,9 +512,6 @@ async function refresh() {
 
 function wireEvents() {
   els.addMeasurementBtn.addEventListener("click", addFromFields);
-  els.sysNextBtn.addEventListener("click", () => els.diaInput.focus());
-  els.diaNextBtn.addEventListener("click", () => els.pulseInput.focus());
-  els.pulseDoneBtn.addEventListener("click", addFromFields);
   els.entryForm.addEventListener("submit", submitSession);
   els.clearPendingBtn.addEventListener("click", () => {
     pending = [];
@@ -530,25 +538,22 @@ function wireEvents() {
     });
   });
 
-  [els.startTimeRange, els.endTimeRange].forEach((range) => {
-    range.addEventListener("input", () => {
-      startHour = Number(els.startTimeRange.value);
-      endHour = Number(els.endTimeRange.value);
-      renderTimeFilter();
-      renderStats();
-      renderHistory();
-      renderChart();
+  [els.startTimeInput, els.endTimeInput].forEach((input) => {
+    input.addEventListener("input", () => {
+      const nextStart = minutesFromValue(els.startTimeInput.value);
+      const nextEnd = minutesFromValue(els.endTimeInput.value);
+      if (nextStart === null || nextEnd === null) return;
+      startMinute = nextStart;
+      endMinute = nextEnd;
+      renderFilteredViews();
     });
   });
-  els.resetTimeFilterBtn.addEventListener("click", () => {
-    startHour = 0;
-    endHour = 24;
-    els.startTimeRange.value = String(startHour);
-    els.endTimeRange.value = String(endHour);
-    renderTimeFilter();
-    renderStats();
-    renderHistory();
-    renderChart();
+  document.querySelectorAll(".filter-presets button").forEach((button) => {
+    button.addEventListener("click", () => {
+      startMinute = minutesFromValue(button.dataset.start);
+      endMinute = minutesFromValue(button.dataset.end);
+      renderFilteredViews();
+    });
   });
 
   els.exportCsvBtn.addEventListener("click", exportCsv);
