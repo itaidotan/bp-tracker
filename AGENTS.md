@@ -44,8 +44,8 @@ When a pending batch is saved, `startedAt` is the save time and its readings are
 - Time presets are All day, Nighttime (22:00–06:00), Daytime (06:00–16:00), and Evening (16:00–22:00).
 - Equal From/To values mean all day. Otherwise, the start is inclusive and the end is exclusive. A start later than the end is an overnight range.
 - Time filtering uses each individual reading's local time and spans all stored dates. It affects history, session averages, chart points, and summary statistics.
-- Selected-hours average and highest selected use every matching reading across all dates. The 30-day average applies both the time filter and its date cutoff.
-- The chart plots filtered session averages. Its x-axis uses actual session timestamps, so missed days create proportional gaps. The 14-day and 30-day views use a fixed cutoff-to-now domain; All uses the first-to-last matching session.
+- Selected-hours average and highest selected use every matching reading across all dates. The 30-day average applies both the time filter and its date cutoff. Average cards include average pulse as well as systolic/diastolic pressure.
+- The chart plots filtered systolic, diastolic, and pulse session averages. All is the default range. Its x-axis uses actual session timestamps, so missed days create proportional gaps. The 14-day and 30-day views use a fixed cutoff-to-now domain; All uses the first-to-last matching session.
 - JSON backup and CSV export always include all stored data, regardless of the active visual filter.
 
 ## Editing and Validation

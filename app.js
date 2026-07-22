@@ -34,7 +34,7 @@ const els = {
 let db;
 let pending = [];
 let sessions = [];
-let chartRange = "14";
+let chartRange = "all";
 let startMinute = 0;
 let endMinute = 0;
 let deferredPrompt;
@@ -287,12 +287,18 @@ function renderStats() {
   const selected = filteredReadings();
   const selectedAvg = average(selected);
   setText("filteredAvg", selectedAvg ? `${selectedAvg.sys}/${selectedAvg.dia}` : "--/--");
-  setText("filteredCount", `${selected.length} reading${selected.length === 1 ? "" : "s"}`);
+  setText(
+    "filteredCount",
+    `${selectedAvg ? `${selectedAvg.pulse} bpm · ` : ""}${selected.length} reading${selected.length === 1 ? "" : "s"}`
+  );
 
   const recent = filteredReadings(30);
   const recentAvg = average(recent);
   setText("monthAvg", recentAvg ? `${recentAvg.sys}/${recentAvg.dia}` : "--/--");
-  setText("monthCount", `${recent.length} reading${recent.length === 1 ? "" : "s"}`);
+  setText(
+    "monthCount",
+    `${recentAvg ? `${recentAvg.pulse} bpm · ` : ""}${recent.length} reading${recent.length === 1 ? "" : "s"}`
+  );
 
   const highest = selected.reduce((max, reading) => {
     if (!max || reading.sys > max.sys || (reading.sys === max.sys && reading.dia > max.dia)) return reading;
@@ -413,11 +419,13 @@ function renderChart() {
 
   drawLine(ctx, rows.map((row) => [xFor(row.t), yFor(row.avg.sys)]), "#0f766e");
   drawLine(ctx, rows.map((row) => [xFor(row.t), yFor(row.avg.dia)]), "#6d5dfc");
+  drawLine(ctx, rows.map((row) => [xFor(row.t), yFor(row.avg.pulse)]), "#b7791f");
 
   rows.forEach((row) => {
     const x = xFor(row.t);
     dot(ctx, x, yFor(row.avg.sys), "#0f766e");
     dot(ctx, x, yFor(row.avg.dia), "#6d5dfc");
+    dot(ctx, x, yFor(row.avg.pulse), "#b7791f");
   });
 
   drawTimeAxis(ctx, minT, maxT, pad.left, plotW, height);
@@ -459,9 +467,11 @@ function legend(ctx, width) {
   ctx.textAlign = "right";
   ctx.font = "12px system-ui, sans-serif";
   ctx.fillStyle = "#0f766e";
-  ctx.fillText("Sys", width - 54, 18);
+  ctx.fillText("Sys", width - 92, 18);
   ctx.fillStyle = "#6d5dfc";
-  ctx.fillText("Dia", width - 16, 18);
+  ctx.fillText("Dia", width - 54, 18);
+  ctx.fillStyle = "#b7791f";
+  ctx.fillText("Pulse", width - 16, 18);
 }
 
 function download(filename, type, content) {
